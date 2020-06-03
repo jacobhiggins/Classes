@@ -1,0 +1,7 @@
+% Starting pose
+x = [0;0;pi/2];
+
+
+for i = 1:20
+    
+end
