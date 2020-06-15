@@ -3,9 +3,15 @@
 import numpy as np
 import gym
 import time
+import random
 from lake_envs import *
 
 np.set_printoptions(precision=3)
+
+# 0 = left
+# 1 = down
+# 2 = right
+# 3 = up
 
 """
 For policy_evaluation, policy_improvement, policy_iteration and value_iteration,
@@ -55,7 +61,35 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
+	error = 1
+	i = 0
+	# While error in value function is greater than 1
+	while error > tol and i < 100:
+		new_value_function = np.zeros(nS)
+		# For each state
+		for i in range(nS):
+			# Get policy for that state
+			a = policy[i]
+			# With this policy, get next state
+			# probability, nextState, reward, terminal = P[i][a]
+			# value_function
 
+			# Find all possible transitions, rewards, etc.
+			transitions = P[i][a]
+			for transition in transitions:
+				prob, nextS, reward, term = transition
+				# Calculated update value function
+				new_value_function[i] += prob*(reward + gamma*value_function[nextS])
+			# print(len(transitions))
+			# exit()
+		error = np.max(np.abs(new_value_function - value_function)) # Find greatest difference in new and old value function
+		# print(new_value_function)
+		# print("error: {}".format(error))
+		value_function = new_value_function
+		i+=1
+	if i >= 100:
+		print("Policy evaluation never converged. Exiting code.")
+		exit()
 
 	############################
 	return value_function
@@ -86,6 +120,25 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
+	# For each state
+	for state in range(nS):
+		# Get optimal action
+		# If ties for optimal exist, choose random
+		Qs = np.zeros(nA)
+		for a in range(nA):
+			# All possible next states from this state-action pair
+			transitions = P[state][a]
+			for transition in transitions:
+				prob, nextS, reward, term = transition
+				Qs[a] += prob*(reward + gamma*value_from_policy[nextS])
+		# Get maximum Q
+		max_as = np.where(Qs==Qs.max())
+		max_as = max_as[0]
+		rand_idx = random.randrange(len(max_as))
+		new_policy[state] = max_as[rand_idx]
+	print("New policy:")
+	print(new_policy)
+
 
 	############################
 	return new_policy
@@ -110,11 +163,25 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 	"""
 
 	value_function = np.zeros(nS)
-	policy = np.zeros(nS, dtype=int)
+	policy = 0*np.ones(nS, dtype=int)
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
+	flag = True
+	i = 0
+	while True and i < 100:
+		value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
+		new_policy = policy_improvement(P, nS, nA, value_function,policy,gamma)
+		diff_policy = new_policy-policy
+		if np.linalg.norm(diff_policy)==0:
+			flag = False
+		policy = new_policy
+		i+=1
+
+	if(i==100):
+		print("Policy iteraction never converged. Exiting code.")
+		exit()
 
 	############################
 	return value_function, policy
