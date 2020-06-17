@@ -134,10 +134,11 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 		# Get maximum Q
 		max_as = np.where(Qs==Qs.max())
 		max_as = max_as[0]
-		rand_idx = random.randrange(len(max_as))
-		new_policy[state] = max_as[rand_idx]
-	print("New policy:")
-	print(new_policy)
+		# rand_idx = random.randrange(len(max_as))
+		# new_policy[state] = max_as[rand_idx]
+		new_policy[state] = max_as[0]
+	# print("New policy:")
+	# print(new_policy)
 
 
 	############################
@@ -170,10 +171,11 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 
 	flag = True
 	i = 0
-	while True and i < 100:
+	while flag and i < 100:
 		value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
 		new_policy = policy_improvement(P, nS, nA, value_function,policy,gamma)
 		diff_policy = new_policy-policy
+
 		if np.linalg.norm(diff_policy)==0:
 			flag = False
 		policy = new_policy
@@ -209,6 +211,37 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
+	# Value iteration is like policy iteration above, except estimation of the value function is done by maximizing over actions
+	# After the value function converges, one step is done that find the action that maximizes reward
+
+	error = 1
+	# Iterate value function, find optimal
+	while error > tol:
+		new_value_function = np.zeros(nS)
+		for s in range(nS):
+			Qs = np.zeros(nA)
+			for a in range(nA):
+				transitions = P[s][a]
+				for transition in transitions:
+					prob, nextS, reward, term = transition
+					Qs[a] += prob*(reward + gamma*value_function[nextS])
+			new_value_function[s] = max(Qs)
+		diff_vf = new_value_function-value_function
+		# print(new_value_function)
+		value_function = new_value_function
+		error = np.linalg.norm(diff_vf)
+
+	# Get policy from value function
+	for s in range(nS):
+		Qs = np.zeros(nA)
+		for a in range(nA):
+			transitions = P[s][a]
+			for transition in transitions:
+				prob, nextS, reward, term = transition
+				Qs[a] += prob*(reward + gamma*value_function[nextS])
+			max_as = np.where(Qs==Qs.max())
+			max_as = max_as[0]
+		policy[s] = max_as[0]
 
 	############################
 	return value_function, policy
@@ -250,8 +283,9 @@ def render_single(env, policy, max_steps=100):
 if __name__ == "__main__":
 
 	# comment/uncomment these lines to switch between deterministic/stochastic environments
-	env = gym.make("Deterministic-4x4-FrozenLake-v0")
+	# env = gym.make("Deterministic-4x4-FrozenLake-v0")
 	# env = gym.make("Stochastic-4x4-FrozenLake-v0")
+	env = gym.make("Deterministic-8x8-FrozenLake-v0")
 
 	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
 
@@ -260,7 +294,7 @@ if __name__ == "__main__":
 
 	print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
 
-	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.8, tol=1e-3)
 	render_single(env, p_vi, 100)
 
 
