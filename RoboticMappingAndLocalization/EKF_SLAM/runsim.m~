@@ -1,0 +1,15 @@
+%% Initialize
+
+% Sim parameters
+dt = 0.01;
+time = 0
+
+% Initialize robot
+robot.pose = zeros(3,1); % x, y, theta
+robot.input = zeros(2,1); % linear velocity, angular velocity
+
+%% Initial Plot
+
+
+
+%% Simulation
