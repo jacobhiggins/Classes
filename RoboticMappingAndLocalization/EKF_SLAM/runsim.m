@@ -8,6 +8,7 @@ vmax = 5;
 % Initialize robot
 robot.pose = [2;8;0]; % x, y, theta
 robot.input = zeros(2,1); % linear velocity, angular velocity\
+robot.dt = dt;
 
 % Initialize goal
 goal.pos = [3;8];
@@ -37,9 +38,9 @@ ylim([0,10]);
 
 %% Simulation
 for t = T
-   v = [1;0;0];
-   robot.pose = robot.pose + v*dt;
+   v = [2;0;0];
    goal = goalUpdate(goal,v(1),dt);
+   robot = robotUpdate(robot,goal);
    plt_goal.XData = goal.pos(1);
    plt_goal.YData = goal.pos(2);
    viz(robot.pose,lmarks);
