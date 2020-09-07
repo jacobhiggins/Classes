@@ -4,6 +4,7 @@ import numpy as np
 import gym
 import time
 import random
+import pickle
 from lake_envs import *
 
 np.set_printoptions(precision=3)
@@ -162,26 +163,33 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 	value_function: np.ndarray[nS]
 	policy: np.ndarray[nS]
 	"""
-
+	max_i = 100
 	value_function = np.zeros(nS)
 	policy = 0*np.ones(nS, dtype=int)
+	value_fncts = np.zeros([max_i,nS])
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
 	flag = True
 	i = 0
-	while flag and i < 100:
+	while flag and i < max_i:
 		value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
 		new_policy = policy_improvement(P, nS, nA, value_function,policy,gamma)
 		diff_policy = new_policy-policy
+
+		print(value_function.size)
+
+		value_fncts[i,:] = value_function
 
 		if np.linalg.norm(diff_policy)==0:
 			flag = False
 		policy = new_policy
 		i+=1
 
-	if(i==100):
+	value_fncts = value_fncts[1:i,:]
+	pickle.dump(value_fncts,open("pi_vfs.p","wb"))
+	if(i==max_i):
 		print("Policy iteraction never converged. Exiting code.")
 		exit()
 
@@ -206,8 +214,11 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	policy: np.ndarray[nS]
 	"""
 
+	max_i = 100
+
 	value_function = np.zeros(nS)
 	policy = np.zeros(nS, dtype=int)
+	value_fncts = np.zeros([max_i,nS])
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
@@ -215,8 +226,9 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	# After the value function converges, one step is done that find the action that maximizes reward
 
 	error = 1
+	i = 0
 	# Iterate value function, find optimal
-	while error > tol:
+	while error > tol and i <= max_i:
 		new_value_function = np.zeros(nS)
 		for s in range(nS):
 			Qs = np.zeros(nA)
@@ -226,10 +238,14 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 					prob, nextS, reward, term = transition
 					Qs[a] += prob*(reward + gamma*value_function[nextS])
 			new_value_function[s] = max(Qs)
+			value_fncts[i,:] = value_function
 		diff_vf = new_value_function-value_function
 		# print(new_value_function)
 		value_function = new_value_function
 		error = np.linalg.norm(diff_vf)
+		i += 1
+	value_fncts = value_fncts[1:i,:]
+	pickle.dump(value_fncts,open("vi_vfs.p","wb"))
 
 	# Get policy from value function
 	for s in range(nS):
@@ -284,8 +300,8 @@ if __name__ == "__main__":
 
 	# comment/uncomment these lines to switch between deterministic/stochastic environments
 	# env = gym.make("Deterministic-4x4-FrozenLake-v0")
-	# env = gym.make("Stochastic-4x4-FrozenLake-v0")
-	env = gym.make("Deterministic-8x8-FrozenLake-v0")
+	env = gym.make("Stochastic-4x4-FrozenLake-v0")
+	# env = gym.make("Deterministic-8x8-FrozenLake-v0")
 
 	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
 
@@ -294,7 +310,7 @@ if __name__ == "__main__":
 
 	print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
 
-	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.8, tol=1e-3)
+	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
 	render_single(env, p_vi, 100)
 
 
